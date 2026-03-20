@@ -61,12 +61,15 @@ const FrameGenerator = () => {
               ctx.drawImage(userImg, dx, dy, drawWidth, drawHeight);
 
               // 🟡 STEP 2: APPLY MASK FROM FRAME
-              ctx.globalCompositeOperation = "destination-atop";
-              ctx.drawImage(frameImg, 0, 0, size, size);
+           // 🟡 Apply mask correctly
+ctx.globalCompositeOperation = "destination-in";
+ctx.drawImage(frameImg, 0, 0, size, size);
 
-              // 🔵 STEP 3: DRAW FRAME OVERLAY AGAIN
-              ctx.globalCompositeOperation = "source-over";
-              ctx.drawImage(frameImg, 0, 0, size, size);
+// 🔵 Reset + draw frame on top
+ctx.globalCompositeOperation = "source-over";
+ctx.drawImage(frameImg, 0, 0, size, size);
+
+           
 
               // ✨ NAME TEXT
               if (name) {
