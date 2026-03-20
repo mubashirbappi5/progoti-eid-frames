@@ -27,7 +27,7 @@ const FrameGenerator = () => {
         const ctx = canvas.getContext("2d");
         if (!ctx) return resolve();
 
-        const size = 700 * scale;
+        const size = 500 * scale;
         canvas.width = size;
         canvas.height = size;
 
