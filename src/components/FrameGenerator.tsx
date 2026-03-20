@@ -41,11 +41,11 @@ const FrameGenerator = () => {
             userImg.onload = () => {
 
               // 🔥 Better tuned area
-              const x = 95 * scale;
-              const y = 95 * scale;
-              const w = size - 190 * scale;
-              const h = size - 300 * scale;
-              const r = 110 * scale;
+           const x = 95 * scale;
+const y = 85 * scale;            // একটু উপরে তুললাম
+const w = size - 190 * scale;
+const h = size - 380 * scale;    // 🔥 height কমানো (main fix)
+const r = 110 * scale;
 
               ctx.save();
               ctx.beginPath();
