@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
-import eidFrame from "@/assets/eid-frame.png"; // new frame
+import eidFrame from "@/assets/eid-frame1.png"; // new frame
 import progotiLogo from "@/assets/progoti-logo.png";
 
 const FrameGenerator = () => {
