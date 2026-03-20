@@ -1,40 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
-import progotiLogo from "@/assets/progoti-logo.jpg";
-
-// 🔥 ADVANCED ISLAMIC PATTERN
-const drawAdvancedPattern = (ctx: CanvasRenderingContext2D, size: number) => {
-  const gap = 80;
-
-  ctx.save();
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.12)";
-  ctx.lineWidth = 1;
-
-  for (let x = 0; x < size; x += gap) {
-    for (let y = 0; y < size; y += gap) {
-      ctx.beginPath();
-
-      ctx.moveTo(x, y - 12);
-      ctx.lineTo(x + 6, y - 6);
-      ctx.lineTo(x + 12, y);
-      ctx.lineTo(x + 6, y + 6);
-      ctx.lineTo(x, y + 12);
-      ctx.lineTo(x - 6, y + 6);
-      ctx.lineTo(x - 12, y);
-      ctx.lineTo(x - 6, y - 6);
-
-      ctx.closePath();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(x, y, 18, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-  }
-
-  ctx.restore();
-};
+import eidFrame from "@/assets/eid-frame.png"; // new frame
+import progotiLogo from "@/assets/progoti-logo.png";
 
 const FrameGenerator = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -52,7 +20,6 @@ const FrameGenerator = () => {
     reader.readAsDataURL(file);
   };
 
-  // 🎯 MAIN DRAW FUNCTION
   const drawCanvas = useCallback(
     (canvas: HTMLCanvasElement, scale = 1) => {
       return new Promise<void>((resolve) => {
@@ -63,136 +30,143 @@ const FrameGenerator = () => {
         canvas.width = size;
         canvas.height = size;
 
-        // 🌌 BACKGROUND
-        const bg = ctx.createLinearGradient(0, 0, 0, size);
-        bg.addColorStop(0, "#0f2c59");
-        bg.addColorStop(1, "#1e4c8f");
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, size, size);
+        const frameImg = new Image();
+        frameImg.crossOrigin = "anonymous";
 
-        // 🌆 Mosque skyline
-        ctx.fillStyle = "rgba(0,0,0,0.25)";
-        const baseY = size - 200 * scale;
+        frameImg.onload = () => {
 
-        ctx.beginPath();
-        ctx.arc(size / 2, baseY - 20 * scale, 120 * scale, Math.PI, 0);
-        ctx.rect(size / 2 - 120 * scale, baseY - 20 * scale, 240 * scale, 120 * scale);
-        ctx.fill();
+          // =========================
+          // 🟡 CIRCLE IMAGE AREA
+          // =========================
+          const centerX = size / 2;
+          const centerY = size / 2 - 120 * scale;
+          const radius = 260 * scale;
 
-        // ✨ Pattern
-        drawAdvancedPattern(ctx, size);
+          if (image) {
+            const userImg = new Image();
+            userImg.crossOrigin = "anonymous";
 
-        // 📐 Frame area
-        const x = 120 * scale;
-        const y = 120 * scale;
-        const w = size - 240 * scale;
-        const h = size - 380 * scale;
-        const r = 140 * scale;
+            userImg.onload = () => {
 
-        ctx.save();
-        ctx.beginPath();
+              ctx.save();
 
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.closePath();
-        ctx.clip();
+              // circle clip
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+              ctx.closePath();
+              ctx.clip();
 
-        // ✨ Light rays
-        for (let i = 0; i < 20; i++) {
-          const angle = (Math.PI * 2 * i) / 20;
-          ctx.beginPath();
-          ctx.moveTo(size / 2, size / 2);
-          ctx.lineTo(
-            size / 2 + Math.cos(angle) * size,
-            size / 2 + Math.sin(angle) * size
-          );
-          ctx.strokeStyle = "rgba(255,215,0,0.05)";
-          ctx.lineWidth = 20 * scale;
-          ctx.stroke();
-        }
+              // cover fit
+              const imgRatio = userImg.width / userImg.height;
+              let drawW = radius * 2;
+              let drawH = radius * 2;
 
-        // 🖼 IMAGE
-        if (image) {
-          const userImg = new Image();
-          userImg.crossOrigin = "anonymous";
+              if (imgRatio > 1) {
+                drawW = drawH * imgRatio;
+              } else {
+                drawH = drawW / imgRatio;
+              }
 
-          userImg.onload = () => {
-            const imgRatio = userImg.width / userImg.height;
-            const boxRatio = w / h;
+              const dx = centerX - drawW / 2;
+              const dy = centerY - drawH / 2;
 
-            let drawW, drawH;
+              ctx.drawImage(userImg, dx, dy, drawW, drawH);
 
-            if (imgRatio > boxRatio) {
-              drawH = h;
-              drawW = drawH * imgRatio;
-            } else {
-              drawW = w;
-              drawH = drawW / imgRatio;
-            }
+              ctx.restore();
 
-            const dx = x - (drawW - w) / 2;
-            const dy = y - (drawH - h) / 2;
-
-            ctx.drawImage(userImg, dx, dy, drawW, drawH);
-            ctx.restore();
-
-            // 🟡 Border
-            ctx.lineWidth = 10 * scale;
-            ctx.strokeStyle = "#FFD700";
-            ctx.stroke();
-
-            // ✨ TEXT
-            const textY = size - 160 * scale;
-            ctx.fillStyle = "#FFD700";
-            ctx.font = `bold ${55 * scale}px serif`;
-            ctx.textAlign = "center";
-            ctx.fillText("Eid Mubarak", size / 2, textY);
-
-            if (name) {
-              ctx.font = `bold ${40 * scale}px serif`;
-              ctx.fillText(name, size / 2, textY + 55 * scale);
-            }
-
-            // 🔵 LOGO
-            const logo = new Image();
-            logo.onload = () => {
-              const lw = 260 * scale;
-              const lh = 140 * scale;
-
-              const lx = size - lw - 20 * scale;
-              const ly = size - 300 * scale;
-
-              ctx.drawImage(logo, lx, ly, lw, lh);
-              resolve();
+              // 🟡 GOLD BORDER
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
+              ctx.lineWidth = 10 * scale;
+              ctx.strokeStyle = "#FFD700";
+              ctx.stroke();
             };
 
-            logo.src = progotiLogo;
+            userImg.src = image;
+          }
+
+          // =========================
+          // 🖼 FRAME OVERLAY
+          // =========================
+          ctx.drawImage(frameImg, 0, 0, size, size);
+
+          // =========================
+          // ✨ NAME BOX
+          // =========================
+          if (name) {
+            const boxWidth = 400 * scale;
+            const boxHeight = 70 * scale;
+
+            const boxX = size / 2 - boxWidth / 2;
+            const boxY = size - 250 * scale;
+
+            ctx.save();
+
+            // box bg
+            ctx.fillStyle = "rgba(255,255,255,0.15)";
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 20 * scale);
+            ctx.fill();
+
+            // border
+            ctx.strokeStyle = "#FFD700";
+            ctx.lineWidth = 2 * scale;
+            ctx.stroke();
+
+            // text
+            ctx.fillStyle = "#ffffff";
+            ctx.font = `bold ${32 * scale}px serif`;
+            ctx.textAlign = "center";
+            ctx.fillText(name, size / 2, boxY + 45 * scale);
+
+            ctx.restore();
+          }
+
+          // =========================
+          // 🔵 LOGO (BOTTOM RIGHT)
+          // =========================
+          const logo = new Image();
+          logo.onload = () => {
+            const s = 120 * scale;
+
+            const lx = size - s - 30 * scale;
+            const ly = size - s - 30 * scale;
+
+            ctx.save();
+
+            // white circle bg
+            ctx.beginPath();
+            ctx.arc(lx + s / 2, ly + s / 2, s / 2 + 5, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+
+            // clip
+            ctx.beginPath();
+            ctx.arc(lx + s / 2, ly + s / 2, s / 2, 0, Math.PI * 2);
+            ctx.clip();
+
+            ctx.drawImage(logo, lx, ly, s, s);
+
+            ctx.restore();
+
+            resolve();
           };
 
-          userImg.src = image;
-        } else {
-          resolve();
-        }
+          logo.src = progotiLogo;
+        };
+
+        frameImg.src = eidFrame;
       });
     },
     [image, name]
   );
 
-  // 👀 Preview
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
   }, [drawCanvas]);
 
-  // ⬇️ Download
   const handleDownload = async () => {
     if (!canvasRef.current) return;
 
@@ -200,11 +174,12 @@ const FrameGenerator = () => {
     await drawCanvas(canvasRef.current, 1);
 
     const link = document.createElement("a");
-    link.download = "eid-premium.png";
-    link.href = canvasRef.current.toDataURL();
+    link.download = "eid-frame.png";
+    link.href = canvasRef.current.toDataURL("image/png");
     link.click();
 
     setIsGenerating(false);
+
     confetti({ particleCount: 120, spread: 80 });
   };
 
