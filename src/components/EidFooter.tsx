@@ -7,7 +7,7 @@ const EidFooter = () => (
       <img src={progotiLogo} alt="Progoti-21" className="w-10 h-10 rounded-full object-contain" />
       <div className="flex items-center gap-2 text-muted-foreground font-body text-sm">
         <Moon className="w-4 h-4 text-secondary" />
-        Made with ❤️ by Progoti-21
+        Made with ❤️ by Mubashir bappi
         <Moon className="w-4 h-4 text-secondary" />
       </div>
     </div>
