@@ -30,17 +30,21 @@ const FrameGenerator = () => {
         canvas.height = size;
 
         const frameImg = new Image();
-        frameImg.src = eidFrame;
+        frameImg.crossOrigin = "anonymous";
+
+        // ✅ FIXED SRC (IMPORTANT)
+        frameImg.src =
+          typeof eidFrame === "string"
+            ? eidFrame
+            : (eidFrame as any).default;
 
         frameImg.onload = () => {
-
           const centerX = size / 2;
           const centerY = size / 2 - 120 * scale;
           const radius = 260 * scale;
 
-          // 🧠 helper draw function
           const drawAll = (userImg?: HTMLImageElement) => {
-
+            // 🟡 IMAGE
             if (userImg) {
               ctx.save();
 
@@ -62,7 +66,7 @@ const FrameGenerator = () => {
               ctx.drawImage(userImg, dx, dy, drawW, drawH);
               ctx.restore();
 
-              // border
+              // 🟡 BORDER
               ctx.beginPath();
               ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
               ctx.lineWidth = 10 * scale;
@@ -70,10 +74,10 @@ const FrameGenerator = () => {
               ctx.stroke();
             }
 
-            // 🖼 ALWAYS DRAW FRAME LAST
+            // 🖼 FRAME LAST
             ctx.drawImage(frameImg, 0, 0, size, size);
 
-            // ✨ Name Box
+            // ✨ NAME BOX
             if (name) {
               const boxWidth = 400 * scale;
               const boxHeight = 70 * scale;
@@ -98,9 +102,10 @@ const FrameGenerator = () => {
             resolve();
           };
 
-          // 🟢 CASE: image exists
+          // 🟢 IMAGE LOAD
           if (image) {
             const userImg = new Image();
+            userImg.crossOrigin = "anonymous";
             userImg.src = image;
 
             userImg.onload = () => drawAll(userImg);
@@ -109,17 +114,21 @@ const FrameGenerator = () => {
             drawAll();
           }
         };
+
+        frameImg.onerror = () => resolve();
       });
     },
     [image, name]
   );
 
+  // 👀 PREVIEW
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
   }, [drawCanvas]);
 
+  // ⬇️ DOWNLOAD
   const handleDownload = async () => {
     if (!canvasRef.current) return;
 
@@ -132,6 +141,7 @@ const FrameGenerator = () => {
     link.click();
 
     setIsGenerating(false);
+
     confetti({ particleCount: 120, spread: 80 });
   };
 
@@ -139,6 +149,7 @@ const FrameGenerator = () => {
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
 
+        {/* LEFT */}
         <div className="space-y-6">
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -168,10 +179,15 @@ const FrameGenerator = () => {
             onClick={handleDownload}
             className="w-full bg-black text-white py-3 rounded-lg"
           >
-            {isGenerating ? <Loader2 className="animate-spin mx-auto" /> : "Download"}
+            {isGenerating ? (
+              <Loader2 className="animate-spin mx-auto" />
+            ) : (
+              "Download"
+            )}
           </button>
         </div>
 
+        {/* RIGHT */}
         <canvas
           ref={previewCanvasRef}
           className="w-full rounded-lg shadow-xl"
