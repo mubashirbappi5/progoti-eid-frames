@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
-import eidFrame from "@/assets/eid-frame1.png";
+import eidFrame from "@/assets/eid-frame.png";
 
 const FrameGenerator = () => {
   const [image, setImage] = useState<string | null>(null);
@@ -31,104 +31,122 @@ const FrameGenerator = () => {
 
         const frameImg = new Image();
         frameImg.crossOrigin = "anonymous";
-
-        // ✅ FIXED SRC (IMPORTANT)
-        frameImg.src =
-          typeof eidFrame === "string"
-            ? eidFrame
-            : (eidFrame as any).default;
+        frameImg.src = eidFrame;
 
         frameImg.onload = () => {
+
+          // =========================
+          // 🟡 PERFECT ROUND IMAGE
+          // =========================
           const centerX = size / 2;
           const centerY = size / 2 - 120 * scale;
-          const radius = 260 * scale;
+          const radius = 250 * scale;
 
-          const drawAll = (userImg?: HTMLImageElement) => {
-            // 🟡 IMAGE
-            if (userImg) {
-              ctx.save();
-
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-              ctx.clip();
-
-              const imgRatio = userImg.width / userImg.height;
-
-              let drawW = radius * 2;
-              let drawH = radius * 2;
-
-              if (imgRatio > 1) drawW = drawH * imgRatio;
-              else drawH = drawW / imgRatio;
-
-              const dx = centerX - drawW / 2;
-              const dy = centerY - drawH / 2;
-
-              ctx.drawImage(userImg, dx, dy, drawW, drawH);
-              ctx.restore();
-
-              // 🟡 BORDER
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
-              ctx.lineWidth = 10 * scale;
-              ctx.strokeStyle = "#FFD700";
-              ctx.stroke();
-            }
-
-            // 🖼 FRAME LAST
-            ctx.drawImage(frameImg, 0, 0, size, size);
-
-            // ✨ NAME BOX
-            if (name) {
-              const boxWidth = 400 * scale;
-              const boxHeight = 70 * scale;
-              const boxX = size / 2 - boxWidth / 2;
-              const boxY = size - 250 * scale;
-
-              ctx.fillStyle = "rgba(255,255,255,0.15)";
-              ctx.beginPath();
-              ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 20 * scale);
-              ctx.fill();
-
-              ctx.strokeStyle = "#FFD700";
-              ctx.lineWidth = 2 * scale;
-              ctx.stroke();
-
-              ctx.fillStyle = "#ffffff";
-              ctx.font = `bold ${32 * scale}px serif`;
-              ctx.textAlign = "center";
-              ctx.fillText(name, size / 2, boxY + 45 * scale);
-            }
-
-            resolve();
-          };
-
-          // 🟢 IMAGE LOAD
           if (image) {
             const userImg = new Image();
             userImg.crossOrigin = "anonymous";
             userImg.src = image;
 
-            userImg.onload = () => drawAll(userImg);
-            userImg.onerror = () => drawAll();
-          } else {
-            drawAll();
-          }
-        };
+            userImg.onload = () => {
+              ctx.save();
 
-        frameImg.onerror = () => resolve();
+              // 🔥 PERFECT CIRCLE CLIP
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+              ctx.closePath();
+              ctx.clip();
+
+              // COVER FIT
+              const imgRatio = userImg.width / userImg.height;
+
+              let drawW = radius * 2;
+              let drawH = radius * 2;
+
+              if (imgRatio > 1) {
+                drawW = drawH * imgRatio;
+              } else {
+                drawH = drawW / imgRatio;
+              }
+
+              const dx = centerX - drawW / 2;
+              const dy = centerY - drawH / 2;
+
+              ctx.drawImage(userImg, dx, dy, drawW, drawH);
+
+              ctx.restore();
+
+              // 🟡 GOLD BORDER
+              ctx.beginPath();
+              ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
+              ctx.lineWidth = 10 * scale;
+              ctx.strokeStyle = "#FFD700";
+              ctx.shadowColor = "rgba(255,215,0,0.6)";
+              ctx.shadowBlur = 15 * scale;
+              ctx.stroke();
+            };
+          }
+
+          // =========================
+          // 🖼 FRAME TOP
+          // =========================
+          ctx.drawImage(frameImg, 0, 0, size, size);
+
+          // =========================
+          // ✨ NAME BOX (PREMIUM)
+          // =========================
+          if (name) {
+            const boxWidth = 450 * scale;
+            const boxHeight = 80 * scale;
+
+            const boxX = size / 2 - boxWidth / 2;
+            const boxY = size - 240 * scale;
+
+            ctx.save();
+
+            // 🔥 GRADIENT BOX
+            const gradient = ctx.createLinearGradient(
+              boxX,
+              boxY,
+              boxX + boxWidth,
+              boxY
+            );
+
+            gradient.addColorStop(0, "#FFD700");
+            gradient.addColorStop(1, "#E6B800");
+
+            ctx.fillStyle = gradient;
+
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 25 * scale);
+            ctx.fill();
+
+            // BORDER
+            ctx.lineWidth = 3 * scale;
+            ctx.strokeStyle = "#ffffff";
+            ctx.stroke();
+
+            // TEXT
+            ctx.fillStyle = "#000";
+            ctx.font = `bold ${36 * scale}px serif`;
+            ctx.textAlign = "center";
+            ctx.fillText(name, size / 2, boxY + 52 * scale);
+
+            ctx.restore();
+          }
+
+          resolve();
+        };
       });
     },
     [image, name]
   );
 
-  // 👀 PREVIEW
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
   }, [drawCanvas]);
 
-  // ⬇️ DOWNLOAD
   const handleDownload = async () => {
     if (!canvasRef.current) return;
 
@@ -136,7 +154,7 @@ const FrameGenerator = () => {
     await drawCanvas(canvasRef.current, 1);
 
     const link = document.createElement("a");
-    link.download = "eid-frame.png";
+    link.download = `eid-${name || "frame"}.png`;
     link.href = canvasRef.current.toDataURL("image/png");
     link.click();
 
@@ -149,8 +167,8 @@ const FrameGenerator = () => {
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
 
-        {/* LEFT */}
         <div className="space-y-6">
+
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer"
@@ -179,18 +197,13 @@ const FrameGenerator = () => {
             onClick={handleDownload}
             className="w-full bg-black text-white py-3 rounded-lg"
           >
-            {isGenerating ? (
-              <Loader2 className="animate-spin mx-auto" />
-            ) : (
-              "Download"
-            )}
+            {isGenerating ? <Loader2 className="animate-spin mx-auto" /> : "Download"}
           </button>
         </div>
 
-        {/* RIGHT */}
         <canvas
           ref={previewCanvasRef}
-          className="w-full rounded-lg shadow-xl"
+          className="w-full rounded-lg"
           style={{ aspectRatio: "1/1" }}
         />
 
