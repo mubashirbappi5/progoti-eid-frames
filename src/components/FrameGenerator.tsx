@@ -1,137 +1,280 @@
-const drawCanvas = useCallback(
-  (canvas: HTMLCanvasElement, scale = 1) => {
-    return new Promise<void>((resolve) => {
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve();
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Upload, Download, Loader2 } from "lucide-react";
+import confetti from "canvas-confetti";
+import progotiLogo from "@/assets/progoti-logo.jpg";
 
-      const size = 1080 * scale;
-      canvas.width = size;
-      canvas.height = size;
+const FrameGenerator = () => {
+  const [image, setImage] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
-      const frameImg = new Image();
-      frameImg.crossOrigin = "anonymous";
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-      frameImg.onload = () => {
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => setImage(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
-        // 🧠 CREATE TEMP CANVAS FOR DETECTION
-        const tempCanvas = document.createElement("canvas");
-        const tctx = tempCanvas.getContext("2d");
+  const drawCanvas = useCallback(
+    (canvas: HTMLCanvasElement, scale = 1) => {
+      return new Promise<void>((resolve) => {
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve();
 
-        tempCanvas.width = size;
-        tempCanvas.height = size;
-
-        if (!tctx) return resolve();
-
-        tctx.drawImage(frameImg, 0, 0, size, size);
-
-        const imageData = tctx.getImageData(0, 0, size, size);
-        const data = imageData.data;
-
-        // 🔍 DETECT BLACK AREA
-        let minX = size, minY = size;
-        let maxX = 0, maxY = 0;
-
-        for (let y = 0; y < size; y += 4) {
-          for (let x = 0; x < size; x += 4) {
-            const i = (y * size + x) * 4;
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            // detect dark area (black center)
-            if (r < 50 && g < 50 && b < 50) {
-              if (x < minX) minX = x;
-              if (y < minY) minY = y;
-              if (x > maxX) maxX = x;
-              if (y > maxY) maxY = y;
-            }
-          }
-        }
-
-        const boxX = minX;
-        const boxY = minY;
-        const boxW = maxX - minX;
-        const boxH = maxY - minY;
+        const size = 1080 * scale;
+        canvas.width = size;
+        canvas.height = size;
 
         // =========================
-        // 🎯 DRAW USER IMAGE
+        // 🎨 BACKGROUND
         // =========================
+        const bg = ctx.createLinearGradient(0, 0, 0, size);
+        bg.addColorStop(0, "#0f2c59");
+        bg.addColorStop(1, "#1e4c8f");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, size, size);
+
+        // =========================
+        // 📐 FRAME AREA
+        // =========================
+        const x = 120 * scale;
+        const y = 120 * scale;
+        const w = size - 240 * scale;
+        const h = size - 380 * scale;
+        const r = 140 * scale;
+
+        // =========================
+        // 🖼 IMAGE CLIP
+        // =========================
+        ctx.save();
+        ctx.beginPath();
+
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+
+        ctx.closePath();
+        ctx.clip();
 
         if (image) {
           const userImg = new Image();
           userImg.crossOrigin = "anonymous";
 
           userImg.onload = () => {
-
             const imgRatio = userImg.width / userImg.height;
-            const boxRatio = boxW / boxH;
+            const boxRatio = w / h;
 
             let drawW, drawH;
 
             if (imgRatio > boxRatio) {
-              drawH = boxH;
+              drawH = h;
               drawW = drawH * imgRatio;
             } else {
-              drawW = boxW;
+              drawW = w;
               drawH = drawW / imgRatio;
             }
 
-            const dx = boxX - (drawW - boxW) / 2;
-            const dy = boxY - (drawH - boxH) / 2;
+            const dx = x - (drawW - w) / 2;
+            const dy = y - (drawH - h) / 2;
 
             ctx.drawImage(userImg, dx, dy, drawW, drawH);
-
-            // 🔥 Smooth edge blend
-            ctx.save();
-            ctx.globalCompositeOperation = "destination-over";
-            ctx.fillStyle = "rgba(0,0,0,0.2)";
-            ctx.fillRect(boxX, boxY, boxW, boxH);
             ctx.restore();
 
-            // 🖼 Frame on top
-            ctx.drawImage(frameImg, 0, 0, size, size);
+            // =========================
+            // 🟡 BORDER
+            // =========================
+            ctx.beginPath();
 
-            // ✨ Name
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+
+            ctx.closePath();
+
+            ctx.lineWidth = 14 * scale;
+            ctx.strokeStyle = "#FFD700";
+            ctx.stroke();
+
+            // =========================
+            // ✨ TEXT
+            // =========================
+            ctx.save();
+
+            const textY = size - 160 * scale;
+
+            const gradient = ctx.createLinearGradient(
+              size / 2 - 200 * scale,
+              textY,
+              size / 2 + 200 * scale,
+              textY
+            );
+
+            gradient.addColorStop(0, "#FFD700");
+            gradient.addColorStop(0.5, "#FFF5CC");
+            gradient.addColorStop(1, "#E6B800");
+
+            ctx.font = `bold ${55 * scale}px 'Playfair Display', serif`;
+            ctx.textAlign = "center";
+            ctx.fillStyle = gradient;
+            ctx.fillText("Eid Mubarak", size / 2, textY);
+
             if (name) {
-              ctx.save();
-
-              const y = size - 150 * scale;
-
-              const gradient = ctx.createLinearGradient(
-                size / 2 - 200 * scale,
-                y,
-                size / 2 + 200 * scale,
-                y
-              );
-
-              gradient.addColorStop(0, "#FFD700");
-              gradient.addColorStop(0.5, "#FFF5CC");
-              gradient.addColorStop(1, "#E6B800");
-
-              ctx.font = `bold ${50 * scale}px 'Playfair Display', serif`;
-              ctx.textAlign = "center";
-
-              ctx.shadowColor = "rgba(255,215,0,0.6)";
-              ctx.shadowBlur = 10 * scale;
-
-              ctx.fillStyle = gradient;
-              ctx.fillText(name, size / 2, y);
-
-              ctx.restore();
+              ctx.font = `bold ${40 * scale}px 'Playfair Display', serif`;
+              ctx.fillText(name, size / 2, textY + 55 * scale);
             }
 
-            resolve();
+            ctx.restore();
+
+            // =========================
+            // 🔵 LOGO (BOTTOM RIGHT)
+            // =========================
+            const logo = new Image();
+            logo.onload = () => {
+              const logoSize = 110 * scale;
+              const lx = size - logoSize - 40 * scale;
+              const ly = size - logoSize - 40 * scale;
+
+              // white bg circle
+              ctx.beginPath();
+              ctx.arc(
+                lx + logoSize / 2,
+                ly + logoSize / 2,
+                logoSize / 2 + 6 * scale,
+                0,
+                Math.PI * 2
+              );
+              ctx.fillStyle = "#ffffff";
+              ctx.fill();
+
+              // clip logo
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(
+                lx + logoSize / 2,
+                ly + logoSize / 2,
+                logoSize / 2,
+                0,
+                Math.PI * 2
+              );
+              ctx.clip();
+
+              ctx.drawImage(logo, lx, ly, logoSize, logoSize);
+              ctx.restore();
+
+              resolve();
+            };
+
+            logo.src = progotiLogo;
           };
 
           userImg.src = image;
         } else {
-          ctx.drawImage(frameImg, 0, 0, size, size);
+          ctx.restore();
           resolve();
         }
-      };
+      });
+    },
+    [image, name]
+  );
 
-      frameImg.src = eidFrame;
-    });
-  },
-  [image, name]
-);
+  useEffect(() => {
+    if (previewCanvasRef.current) {
+      drawCanvas(previewCanvasRef.current, 0.4);
+    }
+  }, [drawCanvas]);
+
+  const handleDownload = async () => {
+    if (!canvasRef.current) return;
+
+    setIsGenerating(true);
+    await drawCanvas(canvasRef.current, 1);
+
+    const link = document.createElement("a");
+    link.download = `eid-${name || "frame"}.png`;
+    link.href = canvasRef.current.toDataURL("image/png");
+    link.click();
+
+    setIsGenerating(false);
+
+    confetti({ particleCount: 120, spread: 80 });
+  };
+
+  return (
+    <section className="py-16 px-4">
+      <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
+
+        {/* LEFT */}
+        <div className="space-y-6">
+
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer"
+          >
+            <Upload className="mx-auto mb-2" />
+            <p>Upload Photo</p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={(e) =>
+                e.target.files?.[0] && handleFile(e.target.files[0])
+              }
+            />
+          </div>
+
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="w-full p-3 border rounded-lg"
+          />
+
+          <button
+            onClick={handleDownload}
+            className="w-full bg-black text-white py-3 rounded-lg"
+          >
+            {isGenerating ? (
+              <Loader2 className="animate-spin mx-auto" />
+            ) : (
+              "Download"
+            )}
+          </button>
+        </div>
+
+        {/* RIGHT */}
+        <canvas
+          ref={previewCanvasRef}
+          className="w-full rounded-lg"
+          style={{ aspectRatio: "1/1" }}
+        />
+
+        <canvas ref={canvasRef} className="hidden" />
+      </div>
+    </section>
+  );
+};
+
+export default FrameGenerator;
