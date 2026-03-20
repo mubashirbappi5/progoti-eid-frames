@@ -39,7 +39,7 @@ const FrameGenerator = () => {
           // 🟡 PERFECT ROUND IMAGE
           // =========================
           const centerX = size / 2;
-      const centerY = size / 2 - 90 * scale; // 🔥 adjust position
+      const centerY = size / 2 - 130 * scale; // 🔥 adjust position
           const radius = 200 * scale; // 🔥 smaller circle
 
           if (image) {
