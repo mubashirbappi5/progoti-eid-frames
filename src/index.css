@@ -6,33 +6,33 @@
 
 @layer base {
   :root {
-    --background: 140 20% 97%;
-    --foreground: 150 30% 10%;
+    --background: 40 30% 97%;
+    --foreground: 220 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 150 30% 10%;
+    --card-foreground: 220 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 30% 10%;
+    --popover-foreground: 220 20% 12%;
 
     --primary: 152 45% 28%;
     --primary-foreground: 45 80% 95%;
 
-    --secondary: 45 60% 50%;
-    --secondary-foreground: 150 30% 10%;
+    --secondary: 30 90% 55%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 140 15% 92%;
-    --muted-foreground: 150 10% 45%;
+    --muted: 40 20% 92%;
+    --muted-foreground: 220 10% 45%;
 
-    --accent: 45 75% 55%;
-    --accent-foreground: 150 30% 10%;
+    --accent: 207 70% 45%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 140 15% 88%;
-    --input: 140 15% 88%;
-    --ring: 152 45% 28%;
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 30 90% 55%;
 
     --radius: 0.75rem;
 
@@ -41,7 +41,9 @@
     --eid-gold: 42 70% 50%;
     --eid-gold-light: 45 80% 70%;
     --eid-cream: 40 40% 96%;
-    --eid-dark: 150 30% 12%;
+    --eid-dark: 220 20% 12%;
+    --eid-orange: 30 90% 55%;
+    --eid-blue: 207 70% 45%;
 
     --font-display: 'Playfair Display', serif;
     --font-body: 'Outfit', sans-serif;
@@ -72,10 +74,10 @@
 
 @layer components {
   .eid-gradient {
-    background: linear-gradient(135deg, hsl(var(--eid-green)) 0%, hsl(var(--eid-green-light)) 50%, hsl(var(--eid-gold)) 100%);
+    background: linear-gradient(135deg, hsl(var(--eid-green)) 0%, hsl(var(--eid-green-light)) 40%, hsl(var(--eid-orange)) 100%);
   }
   .eid-gradient-text {
-    background: linear-gradient(135deg, hsl(var(--eid-gold)) 0%, hsl(var(--eid-gold-light)) 100%);
+    background: linear-gradient(135deg, hsl(var(--eid-orange)) 0%, hsl(var(--eid-gold-light)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
