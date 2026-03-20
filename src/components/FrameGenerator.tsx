@@ -74,6 +74,29 @@ const FrameGenerator = () => {
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, size, size);
 
+        // 🌆 Mosque skyline
+ctx.save();
+ctx.fillStyle = "rgba(0,0,0,0.25)";
+
+const baseY = size - 200 * scale;
+
+ctx.beginPath();
+
+// left dome
+ctx.arc(200 * scale, baseY, 80 * scale, Math.PI, 0);
+ctx.rect(120 * scale, baseY, 160 * scale, 80 * scale);
+
+// center big dome
+ctx.arc(size / 2, baseY - 20 * scale, 120 * scale, Math.PI, 0);
+ctx.rect(size / 2 - 120 * scale, baseY - 20 * scale, 240 * scale, 120 * scale);
+
+// right dome
+ctx.arc(size - 200 * scale, baseY, 80 * scale, Math.PI, 0);
+ctx.rect(size - 280 * scale, baseY, 160 * scale, 80 * scale);
+
+ctx.fill();
+ctx.restore();
+
         // ✨ PATTERN
         drawAdvancedPattern(ctx, size);
 
@@ -105,6 +128,32 @@ const FrameGenerator = () => {
         ctx.closePath();
         ctx.clip();
 
+
+        
+// ✨ Light rays
+ctx.save();
+
+const centerX = size / 2;
+const centerY = size / 2;
+
+for (let i = 0; i < 20; i++) {
+  const angle = (Math.PI * 2 * i) / 20;
+
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+
+  ctx.lineTo(
+    centerX + Math.cos(angle) * size,
+    centerY + Math.sin(angle) * size
+  );
+
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.06)";
+  ctx.lineWidth = 20 * scale;
+  ctx.stroke();
+}
+
+ctx.restore();
+        
         // =========================
         // 🖼 IMAGE
         // =========================
@@ -189,29 +238,33 @@ const FrameGenerator = () => {
             // =========================
             // 🔵 LOGO
             // =========================
-            const logo = new Image();
-            logo.onload = () => {
-              ctx.drawImage(
-                logo,
-                size - 140 * scale,
-                size - 140 * scale,
-                100 * scale,
-                100 * scale
-              );
-              resolve();
-            };
-            logo.src = progotiLogo;
-          };
+           // 🔵 PREMIUM HALF-OVERLAP LOGO
+const logo = new Image();
+logo.onload = () => {
 
-          userImg.src = image;
-        } else {
-          ctx.restore();
-          resolve();
-        }
-      });
-    },
-    [image, name]
-  );
+  const logoWidth = 260 * scale;
+  const logoHeight = 140 * scale;
+
+  // 📍 Position (half inside frame)
+  const lx = size - logoWidth - 20 * scale;
+  const ly = size - 300 * scale; // adjust vertical overlap
+
+  ctx.save();
+
+  // ✨ soft shadow (depth)
+  ctx.shadowColor = "rgba(0,0,0,0.3)";
+  ctx.shadowBlur = 15 * scale;
+  ctx.shadowOffsetY = 5 * scale;
+
+  // 🔥 draw logo
+  ctx.drawImage(logo, lx, ly, logoWidth, logoHeight);
+
+  ctx.restore();
+
+  resolve();
+};
+
+logo.src = progotiLogo;
 
   useEffect(() => {
     if (previewCanvasRef.current) {
