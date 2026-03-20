@@ -12,6 +12,7 @@ const FrameGenerator = () => {
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 🔥 FILE LOAD
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
@@ -19,143 +20,130 @@ const FrameGenerator = () => {
     reader.readAsDataURL(file);
   };
 
+  // 🔥 IMAGE LOADER (FIX)
+  const loadImage = (src: string) => {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = src;
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+    });
+  };
+
+  // 🎨 DRAW FUNCTION
   const drawCanvas = useCallback(
-    (canvas: HTMLCanvasElement, scale = 1) => {
-      return new Promise<void>((resolve) => {
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return resolve();
+    async (canvas: HTMLCanvasElement, scale = 1) => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-        const size = 1080 * scale;
-        canvas.width = size;
-        canvas.height = size;
+      const size = 1080 * scale;
+      canvas.width = size;
+      canvas.height = size;
 
-        const frameImg = new Image();
-        frameImg.crossOrigin = "anonymous";
-        frameImg.src = eidFrame;
+      try {
+        // 🔥 LOAD IMAGES FIRST
+        const frameImg = await loadImage(eidFrame);
+        const userImg = image ? await loadImage(image) : null;
 
-        frameImg.onload = () => {
+        const centerX = size / 2;
+        const centerY = size / 2 - 130 * scale;
+        const radius = 200 * scale;
 
-          const centerX = size / 2;
-          const centerY = size / 2 - 130 * scale;
-          const radius = 200 * scale;
+        // =========================
+        // 🖼 USER IMAGE
+        // =========================
+        if (userImg) {
+          ctx.save();
 
-          const drawFinal = (userImg?: HTMLImageElement) => {
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+          ctx.clip();
 
-            // =========================
-            // 🖼 USER IMAGE
-            // =========================
-            if (userImg) {
-              ctx.save();
+          const imgRatio = userImg.width / userImg.height;
 
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-              ctx.clip();
+          let drawW = radius * 2;
+          let drawH = radius * 2;
 
-              const imgRatio = userImg.width / userImg.height;
+          if (imgRatio > 1) drawW = drawH * imgRatio;
+          else drawH = drawW / imgRatio;
 
-              let drawW = radius * 2;
-              let drawH = radius * 2;
+          const dx = centerX - drawW / 2;
+          const dy = centerY - drawH / 2;
 
-              if (imgRatio > 1) drawW = drawH * imgRatio;
-              else drawH = drawW / imgRatio;
+          ctx.drawImage(userImg, dx, dy, drawW, drawH);
+          ctx.restore();
 
-              const dx = centerX - drawW / 2;
-              const dy = centerY - drawH / 2;
+          // ✨ GOLD BORDER
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
+          ctx.lineWidth = 10 * scale;
+          ctx.strokeStyle = "#FFD700";
+          ctx.shadowColor = "rgba(255,215,0,0.7)";
+          ctx.shadowBlur = 20 * scale;
+          ctx.stroke();
+        }
 
-              ctx.drawImage(userImg, dx, dy, drawW, drawH);
-              ctx.restore();
+        // =========================
+        // 🖼 FRAME
+        // =========================
+        ctx.drawImage(frameImg, 0, 0, size, size);
 
-              // ✨ GOLD BORDER GLOW
-              ctx.beginPath();
-              ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
-              ctx.lineWidth = 10 * scale;
-              ctx.strokeStyle = "#FFD700";
-              ctx.shadowColor = "rgba(255,215,0,0.7)";
-              ctx.shadowBlur = 20 * scale;
-              ctx.stroke();
-            }
+        // =========================
+        // ✨ PREMIUM NAME BOX
+        // =========================
+        if (name) {
+          const boxWidth = 500 * scale;
+          const boxHeight = 90 * scale;
 
-            // =========================
-            // 🖼 FRAME
-            // =========================
-            ctx.drawImage(frameImg, 0, 0, size, size);
+          const boxX = size / 2 - boxWidth / 2;
+          const boxY = size - 240 * scale;
 
-            // =========================
-            // ✨ PREMIUM NAME BOX
-            // =========================
-            if (name) {
-              const boxWidth = 500 * scale;
-              const boxHeight = 90 * scale;
+          ctx.save();
 
-              const boxX = size / 2 - boxWidth / 2;
-              const boxY = size - 240 * scale;
+          const gradient = ctx.createLinearGradient(
+            boxX,
+            boxY,
+            boxX + boxWidth,
+            boxY + boxHeight
+          );
 
-              ctx.save();
+          gradient.addColorStop(0, "#FFD700");
+          gradient.addColorStop(0.5, "#FFF3B0");
+          gradient.addColorStop(1, "#E6B800");
 
-              // 🌈 GOLD GRADIENT
-              const gradient = ctx.createLinearGradient(
-                boxX,
-                boxY,
-                boxX + boxWidth,
-                boxY + boxHeight
-              );
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 30 * scale);
+          ctx.fill();
 
-              gradient.addColorStop(0, "#FFD700");
-              gradient.addColorStop(0.5, "#FFF3B0");
-              gradient.addColorStop(1, "#E6B800");
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 2 * scale;
+          ctx.stroke();
 
-              // box
-              ctx.fillStyle = gradient;
-              ctx.beginPath();
-              ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 30 * scale);
-              ctx.fill();
+          ctx.fillStyle = "#000";
+          ctx.font = `bold ${42 * scale}px serif`;
+          ctx.textAlign = "center";
+          ctx.fillText(name.toUpperCase(), size / 2, boxY + 58 * scale);
 
-              // glow border
-              ctx.strokeStyle = "#ffffff";
-              ctx.lineWidth = 2 * scale;
-              ctx.shadowColor = "rgba(255,255,255,0.6)";
-              ctx.shadowBlur = 10 * scale;
-              ctx.stroke();
+          ctx.restore();
+        }
 
-              // ✨ TEXT SHADOW
-              ctx.shadowBlur = 0;
-              ctx.fillStyle = "#1a1a1a";
-              ctx.font = `bold ${42 * scale}px 'Playfair Display', serif`;
-              ctx.textAlign = "center";
-
-              ctx.fillText(name.toUpperCase(), size / 2, boxY + 58 * scale);
-
-              ctx.restore();
-            }
-
-            resolve();
-          };
-
-          // =========================
-          // 🔥 IMAGE LOADING FIX
-          // =========================
-          if (image) {
-            const userImg = new Image();
-            userImg.crossOrigin = "anonymous";
-            userImg.src = image;
-
-            userImg.onload = () => drawFinal(userImg);
-            userImg.onerror = () => drawFinal();
-          } else {
-            drawFinal();
-          }
-        };
-      });
+      } catch (err) {
+        console.error("Image load failed:", err);
+      }
     },
     [image, name]
   );
 
+  // 🔥 PREVIEW
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
   }, [drawCanvas]);
 
+  // 📥 DOWNLOAD
   const handleDownload = async () => {
     if (!canvasRef.current) return;
 
