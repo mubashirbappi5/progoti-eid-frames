@@ -3,6 +3,41 @@ import { Upload, Download, Loader2 } from "lucide-react";
 import confetti from "canvas-confetti";
 import progotiLogo from "@/assets/progoti-logo.jpg";
 
+// 🔥 ADVANCED ISLAMIC PATTERN
+const drawAdvancedPattern = (ctx: CanvasRenderingContext2D, size: number) => {
+  const gap = 80;
+
+  ctx.save();
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.15)";
+  ctx.lineWidth = 1;
+
+  for (let x = 0; x < size; x += gap) {
+    for (let y = 0; y < size; y += gap) {
+      ctx.beginPath();
+
+      // 8-point star
+      ctx.moveTo(x, y - 12);
+      ctx.lineTo(x + 6, y - 6);
+      ctx.lineTo(x + 12, y);
+      ctx.lineTo(x + 6, y + 6);
+      ctx.lineTo(x, y + 12);
+      ctx.lineTo(x - 6, y + 6);
+      ctx.lineTo(x - 12, y);
+      ctx.lineTo(x - 6, y - 6);
+
+      ctx.closePath();
+      ctx.stroke();
+
+      // circle around
+      ctx.beginPath();
+      ctx.arc(x, y, 18, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+};
+
 const FrameGenerator = () => {
   const [image, setImage] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -30,13 +65,17 @@ const FrameGenerator = () => {
         canvas.height = size;
 
         // =========================
-        // 🎨 BACKGROUND
+        // 🌌 BACKGROUND
         // =========================
         const bg = ctx.createLinearGradient(0, 0, 0, size);
         bg.addColorStop(0, "#0f2c59");
         bg.addColorStop(1, "#1e4c8f");
+
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, size, size);
+
+        // ✨ PATTERN
+        drawAdvancedPattern(ctx, size);
 
         // =========================
         // 📐 FRAME AREA
@@ -47,9 +86,6 @@ const FrameGenerator = () => {
         const h = size - 380 * scale;
         const r = 140 * scale;
 
-        // =========================
-        // 🖼 IMAGE CLIP
-        // =========================
         ctx.save();
         ctx.beginPath();
 
@@ -69,6 +105,9 @@ const FrameGenerator = () => {
         ctx.closePath();
         ctx.clip();
 
+        // =========================
+        // 🖼 IMAGE
+        // =========================
         if (image) {
           const userImg = new Image();
           userImg.crossOrigin = "anonymous";
@@ -113,14 +152,16 @@ const FrameGenerator = () => {
 
             ctx.closePath();
 
-            ctx.lineWidth = 14 * scale;
+            ctx.lineWidth = 12 * scale;
             ctx.strokeStyle = "#FFD700";
+            ctx.shadowColor = "rgba(255,215,0,0.6)";
+            ctx.shadowBlur = 20 * scale;
             ctx.stroke();
 
             // =========================
             // ✨ TEXT
             // =========================
-            ctx.save();
+            ctx.shadowBlur = 0;
 
             const textY = size - 160 * scale;
 
@@ -135,57 +176,30 @@ const FrameGenerator = () => {
             gradient.addColorStop(0.5, "#FFF5CC");
             gradient.addColorStop(1, "#E6B800");
 
-            ctx.font = `bold ${55 * scale}px 'Playfair Display', serif`;
-            ctx.textAlign = "center";
             ctx.fillStyle = gradient;
+            ctx.font = `bold ${55 * scale}px serif`;
+            ctx.textAlign = "center";
             ctx.fillText("Eid Mubarak", size / 2, textY);
 
             if (name) {
-              ctx.font = `bold ${40 * scale}px 'Playfair Display', serif`;
+              ctx.font = `bold ${40 * scale}px serif`;
               ctx.fillText(name, size / 2, textY + 55 * scale);
             }
 
-            ctx.restore();
-
             // =========================
-            // 🔵 LOGO (BOTTOM RIGHT)
+            // 🔵 LOGO
             // =========================
             const logo = new Image();
             logo.onload = () => {
-              const logoSize = 110 * scale;
-              const lx = size - logoSize - 40 * scale;
-              const ly = size - logoSize - 40 * scale;
-
-              // white bg circle
-              ctx.beginPath();
-              ctx.arc(
-                lx + logoSize / 2,
-                ly + logoSize / 2,
-                logoSize / 2 + 6 * scale,
-                0,
-                Math.PI * 2
+              ctx.drawImage(
+                logo,
+                size - 140 * scale,
+                size - 140 * scale,
+                100 * scale,
+                100 * scale
               );
-              ctx.fillStyle = "#ffffff";
-              ctx.fill();
-
-              // clip logo
-              ctx.save();
-              ctx.beginPath();
-              ctx.arc(
-                lx + logoSize / 2,
-                ly + logoSize / 2,
-                logoSize / 2,
-                0,
-                Math.PI * 2
-              );
-              ctx.clip();
-
-              ctx.drawImage(logo, lx, ly, logoSize, logoSize);
-              ctx.restore();
-
               resolve();
             };
-
             logo.src = progotiLogo;
           };
 
@@ -212,8 +226,8 @@ const FrameGenerator = () => {
     await drawCanvas(canvasRef.current, 1);
 
     const link = document.createElement("a");
-    link.download = `eid-${name || "frame"}.png`;
-    link.href = canvasRef.current.toDataURL("image/png");
+    link.download = "eid-premium.png";
+    link.href = canvasRef.current.toDataURL();
     link.click();
 
     setIsGenerating(false);
@@ -225,9 +239,7 @@ const FrameGenerator = () => {
     <section className="py-16 px-4">
       <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8">
 
-        {/* LEFT */}
         <div className="space-y-6">
-
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer"
@@ -256,18 +268,13 @@ const FrameGenerator = () => {
             onClick={handleDownload}
             className="w-full bg-black text-white py-3 rounded-lg"
           >
-            {isGenerating ? (
-              <Loader2 className="animate-spin mx-auto" />
-            ) : (
-              "Download"
-            )}
+            {isGenerating ? <Loader2 className="animate-spin mx-auto" /> : "Download"}
           </button>
         </div>
 
-        {/* RIGHT */}
         <canvas
           ref={previewCanvasRef}
-          className="w-full rounded-lg"
+          className="w-full rounded-lg shadow-xl"
           style={{ aspectRatio: "1/1" }}
         />
 
