@@ -12,28 +12,20 @@ const FrameGenerator = () => {
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 🔥 FILE LOAD
+  // ================= FILE UPLOAD =================
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
+
     const reader = new FileReader();
-    reader.onload = (e) => setImage(e.target?.result as string);
+    reader.onload = (e) => {
+      setImage(e.target?.result as string);
+    };
     reader.readAsDataURL(file);
   };
 
-  // 🔥 IMAGE LOADER (FIX)
-  const loadImage = (src: string) => {
-    return new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = src;
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-    });
-  };
-
-  // 🎨 DRAW FUNCTION
+  // ================= DRAW FUNCTION =================
   const drawCanvas = useCallback(
-    async (canvas: HTMLCanvasElement, scale = 1) => {
+    (canvas: HTMLCanvasElement, scale = 1) => {
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
@@ -41,123 +33,121 @@ const FrameGenerator = () => {
       canvas.width = size;
       canvas.height = size;
 
-      try {
-        // 🔥 LOAD IMAGES FIRST
-        const frameImg = await loadImage(eidFrame);
-        const userImg = image ? await loadImage(image) : null;
+      const frameImg = new Image();
+      frameImg.src = eidFrame;
 
+      frameImg.onload = () => {
         const centerX = size / 2;
         const centerY = size / 2 - 130 * scale;
         const radius = 200 * scale;
 
-        // =========================
-        // 🖼 USER IMAGE
-        // =========================
-        if (userImg) {
-          ctx.save();
+        const drawAll = (userImg?: HTMLImageElement) => {
+          ctx.clearRect(0, 0, size, size);
 
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-          ctx.clip();
+          // ===== IMAGE =====
+          if (userImg) {
+            ctx.save();
 
-          const imgRatio = userImg.width / userImg.height;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.clip();
 
-          let drawW = radius * 2;
-          let drawH = radius * 2;
+            const imgRatio = userImg.width / userImg.height;
 
-          if (imgRatio > 1) drawW = drawH * imgRatio;
-          else drawH = drawW / imgRatio;
+            let drawW = radius * 2;
+            let drawH = radius * 2;
 
-          const dx = centerX - drawW / 2;
-          const dy = centerY - drawH / 2;
+            if (imgRatio > 1) drawW = drawH * imgRatio;
+            else drawH = drawW / imgRatio;
 
-          ctx.drawImage(userImg, dx, dy, drawW, drawH);
-          ctx.restore();
+            const dx = centerX - drawW / 2;
+            const dy = centerY - drawH / 2;
 
-          // ✨ GOLD BORDER
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
-          ctx.lineWidth = 10 * scale;
-          ctx.strokeStyle = "#FFD700";
-          ctx.shadowColor = "rgba(255,215,0,0.7)";
-          ctx.shadowBlur = 20 * scale;
-          ctx.stroke();
+            ctx.drawImage(userImg, dx, dy, drawW, drawH);
+            ctx.restore();
+
+            // border
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 8 * scale, 0, Math.PI * 2);
+            ctx.lineWidth = 10 * scale;
+            ctx.strokeStyle = "#FFD700";
+            ctx.stroke();
+          }
+
+          // ===== FRAME =====
+          ctx.drawImage(frameImg, 0, 0, size, size);
+
+          // ===== NAME BOX =====
+          if (name) {
+            const boxWidth = 450 * scale;
+            const boxHeight = 80 * scale;
+
+            const boxX = size / 2 - boxWidth / 2;
+            const boxY = size - 240 * scale;
+
+            // gradient
+            const gradient = ctx.createLinearGradient(
+              boxX,
+              boxY,
+              boxX + boxWidth,
+              boxY
+            );
+
+            gradient.addColorStop(0, "#FFD700");
+            gradient.addColorStop(1, "#E6B800");
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 25 * scale);
+            ctx.fill();
+
+            ctx.fillStyle = "#000";
+            ctx.font = `bold ${36 * scale}px serif`;
+            ctx.textAlign = "center";
+            ctx.fillText(name.toUpperCase(), size / 2, boxY + 50 * scale);
+          }
+        };
+
+        // ===== LOAD USER IMAGE =====
+        if (image) {
+          const userImg = new Image();
+          userImg.src = image;
+
+          userImg.onload = () => drawAll(userImg);
+          userImg.onerror = () => drawAll();
+        } else {
+          drawAll();
         }
-
-        // =========================
-        // 🖼 FRAME
-        // =========================
-        ctx.drawImage(frameImg, 0, 0, size, size);
-
-        // =========================
-        // ✨ PREMIUM NAME BOX
-        // =========================
-        if (name) {
-          const boxWidth = 500 * scale;
-          const boxHeight = 90 * scale;
-
-          const boxX = size / 2 - boxWidth / 2;
-          const boxY = size - 240 * scale;
-
-          ctx.save();
-
-          const gradient = ctx.createLinearGradient(
-            boxX,
-            boxY,
-            boxX + boxWidth,
-            boxY + boxHeight
-          );
-
-          gradient.addColorStop(0, "#FFD700");
-          gradient.addColorStop(0.5, "#FFF3B0");
-          gradient.addColorStop(1, "#E6B800");
-
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 30 * scale);
-          ctx.fill();
-
-          ctx.strokeStyle = "#fff";
-          ctx.lineWidth = 2 * scale;
-          ctx.stroke();
-
-          ctx.fillStyle = "#000";
-          ctx.font = `bold ${42 * scale}px serif`;
-          ctx.textAlign = "center";
-          ctx.fillText(name.toUpperCase(), size / 2, boxY + 58 * scale);
-
-          ctx.restore();
-        }
-
-      } catch (err) {
-        console.error("Image load failed:", err);
-      }
+      };
     },
     [image, name]
   );
 
-  // 🔥 PREVIEW
+  // ================= PREVIEW =================
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
-  }, [drawCanvas]);
+  }, [image, name]);
 
-  // 📥 DOWNLOAD
-  const handleDownload = async () => {
+  // ================= DOWNLOAD =================
+  const handleDownload = () => {
     if (!canvasRef.current) return;
 
     setIsGenerating(true);
-    await drawCanvas(canvasRef.current, 1);
 
-    const link = document.createElement("a");
-    link.download = `eid-${name || "frame"}.png`;
-    link.href = canvasRef.current.toDataURL("image/png", 1);
-    link.click();
+    drawCanvas(canvasRef.current, 1);
 
-    setIsGenerating(false);
+    setTimeout(() => {
+      const link = document.createElement("a");
+      link.download = `eid-${name || "frame"}.png`;
+      link.href = canvasRef.current!.toDataURL("image/png");
+      link.click();
 
-    confetti({ particleCount: 150, spread: 90 });
+      setIsGenerating(false);
+
+      confetti({ particleCount: 120, spread: 80 });
+    }, 500); // 🔥 wait for draw
   };
 
   return (
@@ -169,7 +159,7 @@ const FrameGenerator = () => {
 
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer hover:bg-gray-50 transition"
+            className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer"
           >
             <Upload className="mx-auto mb-2" />
             <p>Upload Photo</p>
@@ -193,7 +183,7 @@ const FrameGenerator = () => {
 
           <button
             onClick={handleDownload}
-            className="w-full bg-black text-white py-3 rounded-lg hover:opacity-90"
+            className="w-full bg-black text-white py-3 rounded-lg"
           >
             {isGenerating ? (
               <Loader2 className="animate-spin mx-auto" />
