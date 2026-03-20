@@ -13,7 +13,6 @@ const FrameGenerator = () => {
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Upload
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
@@ -21,7 +20,7 @@ const FrameGenerator = () => {
     reader.readAsDataURL(file);
   };
 
-  // 🔥 MAIN DRAW FUNCTION
+  // 🔥 DRAW FUNCTION
   const drawCanvas = useCallback(
     (canvas: HTMLCanvasElement, scale = 1) => {
       return new Promise<void>((resolve) => {
@@ -36,95 +35,128 @@ const FrameGenerator = () => {
         frameImg.crossOrigin = "anonymous";
 
         frameImg.onload = () => {
-          // 🟢 STEP 1: Draw USER IMAGE FIRST (full cover)
+
+          // =========================
+          // 🔥 EXACT SHAPE CLIP PATH
+          // =========================
+
           if (image) {
             const userImg = new Image();
             userImg.crossOrigin = "anonymous";
 
             userImg.onload = () => {
+
+              // 🟡 Frame inner area (tuned for your design)
+              const x = 90 * scale;
+              const y = 85 * scale;
+              const w = size - 180 * scale;
+              const h = size - 280 * scale;
+
+              const r = 120 * scale; // large smooth corners (match your frame)
+
+              ctx.save();
+              ctx.beginPath();
+
+              // Top-left curve
+              ctx.moveTo(x + r, y);
+              ctx.lineTo(x + w - r, y);
+              ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+
+              // Right side
+              ctx.lineTo(x + w, y + h - r);
+              ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+
+              // Bottom
+              ctx.lineTo(x + r, y + h);
+              ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+
+              // Left side
+              ctx.lineTo(x, y + r);
+              ctx.quadraticCurveTo(x, y, x + r, y);
+
+              ctx.closePath();
+              ctx.clip();
+
+              // 🔥 COVER IMAGE
               const imgRatio = userImg.width / userImg.height;
-              const canvasRatio = 1;
+              const boxRatio = w / h;
 
-              let drawWidth, drawHeight;
+              let drawW, drawH;
 
-              if (imgRatio > canvasRatio) {
-                drawHeight = size;
-                drawWidth = drawHeight * imgRatio;
+              if (imgRatio > boxRatio) {
+                drawH = h;
+                drawW = drawH * imgRatio;
               } else {
-                drawWidth = size;
-                drawHeight = drawWidth / imgRatio;
+                drawW = w;
+                drawH = drawW / imgRatio;
               }
 
-              const dx = (size - drawWidth) / 2;
-              const dy = (size - drawHeight) / 2;
+              const dx = x - (drawW - w) / 2;
+              const dy = y - (drawH - h) / 2;
 
-              ctx.drawImage(userImg, dx, dy, drawWidth, drawHeight);
-
-              // 🟡 STEP 2: APPLY MASK FROM FRAME
-           // 🟡 Apply mask correctly
-ctx.globalCompositeOperation = "destination-in";
-ctx.drawImage(frameImg, 0, 0, size, size);
-
-// 🔵 Reset + draw frame on top
-ctx.globalCompositeOperation = "source-over";
-ctx.drawImage(frameImg, 0, 0, size, size);
-
-           
-
-              // ✨ NAME TEXT
-              if (name) {
-                ctx.save();
-
-                const y = size - 150 * scale;
-
-                const gradient = ctx.createLinearGradient(
-                  size / 2 - 200 * scale,
-                  y,
-                  size / 2 + 200 * scale,
-                  y
-                );
-
-                gradient.addColorStop(0, "#FFD700");
-                gradient.addColorStop(0.5, "#FFF5CC");
-                gradient.addColorStop(1, "#E6B800");
-
-                ctx.font = `bold ${48 * scale}px 'Playfair Display', serif`;
-                ctx.textAlign = "center";
-
-                ctx.shadowColor = "rgba(255,215,0,0.6)";
-                ctx.shadowBlur = 12 * scale;
-
-                ctx.fillStyle = gradient;
-                ctx.fillText(name, size / 2, y);
-
-                ctx.restore();
-              }
-
-              // 🟣 LOGO
-              const logoImg = new Image();
-              logoImg.onload = () => {
-                const s = 100 * scale;
-                const x = size - s - 30 * scale;
-                const y = size - s - 30 * scale;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x + s / 2, y + s / 2, s / 2, 0, Math.PI * 2);
-                ctx.clip();
-                ctx.drawImage(logoImg, x, y, s, s);
-                ctx.restore();
-
-                resolve();
-              };
-              logoImg.src = progotiLogo;
+              ctx.drawImage(userImg, dx, dy, drawW, drawH);
+              ctx.restore();
             };
 
             userImg.src = image;
-          } else {
-            // If no image → just frame
-            ctx.drawImage(frameImg, 0, 0, size, size);
-            resolve();
           }
+
+          // =========================
+          // 🖼 FRAME ON TOP
+          // =========================
+          ctx.drawImage(frameImg, 0, 0, size, size);
+
+          // =========================
+          // ✨ NAME TEXT
+          // =========================
+          if (name) {
+            ctx.save();
+
+            const textY = size - 150 * scale;
+
+            const gradient = ctx.createLinearGradient(
+              size / 2 - 200 * scale,
+              textY,
+              size / 2 + 200 * scale,
+              textY
+            );
+
+            gradient.addColorStop(0, "#FFD700");
+            gradient.addColorStop(0.5, "#FFF5CC");
+            gradient.addColorStop(1, "#E6B800");
+
+            ctx.font = `bold ${48 * scale}px 'Playfair Display', serif`;
+            ctx.textAlign = "center";
+
+            ctx.shadowColor = "rgba(255,215,0,0.6)";
+            ctx.shadowBlur = 12 * scale;
+
+            ctx.fillStyle = gradient;
+            ctx.fillText(name, size / 2, textY);
+
+            ctx.restore();
+          }
+
+          // =========================
+          // 🔵 LOGO
+          // =========================
+          const logo = new Image();
+          logo.onload = () => {
+            const s = 100 * scale;
+            const lx = size - s - 30 * scale;
+            const ly = size - s - 30 * scale;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(lx + s / 2, ly + s / 2, s / 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(logo, lx, ly, s, s);
+            ctx.restore();
+
+            resolve();
+          };
+
+          logo.src = progotiLogo;
         };
 
         frameImg.src = eidFrame;
@@ -164,7 +196,6 @@ ctx.drawImage(frameImg, 0, 0, size, size);
         {/* LEFT */}
         <div className="space-y-6">
 
-          {/* Upload */}
           <div
             onClick={() => fileInputRef.current?.click()}
             className="border-2 border-dashed p-8 text-center rounded-xl cursor-pointer"
@@ -182,7 +213,6 @@ ctx.drawImage(frameImg, 0, 0, size, size);
             />
           </div>
 
-          {/* Name */}
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -190,16 +220,11 @@ ctx.drawImage(frameImg, 0, 0, size, size);
             className="w-full p-3 border rounded-lg"
           />
 
-          {/* Download */}
           <button
             onClick={handleDownload}
             className="w-full bg-black text-white py-3 rounded-lg"
           >
-            {isGenerating ? (
-              <Loader2 className="animate-spin mx-auto" />
-            ) : (
-              "Download Image"
-            )}
+            {isGenerating ? <Loader2 className="animate-spin mx-auto" /> : "Download"}
           </button>
         </div>
 
