@@ -8,14 +8,13 @@ const drawAdvancedPattern = (ctx: CanvasRenderingContext2D, size: number) => {
   const gap = 80;
 
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.15)";
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.12)";
   ctx.lineWidth = 1;
 
   for (let x = 0; x < size; x += gap) {
     for (let y = 0; y < size; y += gap) {
       ctx.beginPath();
 
-      // 8-point star
       ctx.moveTo(x, y - 12);
       ctx.lineTo(x + 6, y - 6);
       ctx.lineTo(x + 12, y);
@@ -28,7 +27,6 @@ const drawAdvancedPattern = (ctx: CanvasRenderingContext2D, size: number) => {
       ctx.closePath();
       ctx.stroke();
 
-      // circle around
       ctx.beginPath();
       ctx.arc(x, y, 18, 0, Math.PI * 2);
       ctx.stroke();
@@ -54,6 +52,7 @@ const FrameGenerator = () => {
     reader.readAsDataURL(file);
   };
 
+  // 🎯 MAIN DRAW FUNCTION
   const drawCanvas = useCallback(
     (canvas: HTMLCanvasElement, scale = 1) => {
       return new Promise<void>((resolve) => {
@@ -64,45 +63,26 @@ const FrameGenerator = () => {
         canvas.width = size;
         canvas.height = size;
 
-        // =========================
         // 🌌 BACKGROUND
-        // =========================
         const bg = ctx.createLinearGradient(0, 0, 0, size);
         bg.addColorStop(0, "#0f2c59");
         bg.addColorStop(1, "#1e4c8f");
-
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, size, size);
 
         // 🌆 Mosque skyline
-ctx.save();
-ctx.fillStyle = "rgba(0,0,0,0.25)";
+        ctx.fillStyle = "rgba(0,0,0,0.25)";
+        const baseY = size - 200 * scale;
 
-const baseY = size - 200 * scale;
+        ctx.beginPath();
+        ctx.arc(size / 2, baseY - 20 * scale, 120 * scale, Math.PI, 0);
+        ctx.rect(size / 2 - 120 * scale, baseY - 20 * scale, 240 * scale, 120 * scale);
+        ctx.fill();
 
-ctx.beginPath();
-
-// left dome
-ctx.arc(200 * scale, baseY, 80 * scale, Math.PI, 0);
-ctx.rect(120 * scale, baseY, 160 * scale, 80 * scale);
-
-// center big dome
-ctx.arc(size / 2, baseY - 20 * scale, 120 * scale, Math.PI, 0);
-ctx.rect(size / 2 - 120 * scale, baseY - 20 * scale, 240 * scale, 120 * scale);
-
-// right dome
-ctx.arc(size - 200 * scale, baseY, 80 * scale, Math.PI, 0);
-ctx.rect(size - 280 * scale, baseY, 160 * scale, 80 * scale);
-
-ctx.fill();
-ctx.restore();
-
-        // ✨ PATTERN
+        // ✨ Pattern
         drawAdvancedPattern(ctx, size);
 
-        // =========================
-        // 📐 FRAME AREA
-        // =========================
+        // 📐 Frame area
         const x = 120 * scale;
         const y = 120 * scale;
         const w = size - 240 * scale;
@@ -115,48 +95,30 @@ ctx.restore();
         ctx.moveTo(x + r, y);
         ctx.lineTo(x + w - r, y);
         ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-
         ctx.lineTo(x + w, y + h - r);
         ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-
         ctx.lineTo(x + r, y + h);
         ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-
         ctx.lineTo(x, y + r);
         ctx.quadraticCurveTo(x, y, x + r, y);
-
         ctx.closePath();
         ctx.clip();
 
+        // ✨ Light rays
+        for (let i = 0; i < 20; i++) {
+          const angle = (Math.PI * 2 * i) / 20;
+          ctx.beginPath();
+          ctx.moveTo(size / 2, size / 2);
+          ctx.lineTo(
+            size / 2 + Math.cos(angle) * size,
+            size / 2 + Math.sin(angle) * size
+          );
+          ctx.strokeStyle = "rgba(255,215,0,0.05)";
+          ctx.lineWidth = 20 * scale;
+          ctx.stroke();
+        }
 
-        
-// ✨ Light rays
-ctx.save();
-
-const centerX = size / 2;
-const centerY = size / 2;
-
-for (let i = 0; i < 20; i++) {
-  const angle = (Math.PI * 2 * i) / 20;
-
-  ctx.beginPath();
-  ctx.moveTo(centerX, centerY);
-
-  ctx.lineTo(
-    centerX + Math.cos(angle) * size,
-    centerY + Math.sin(angle) * size
-  );
-
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.06)";
-  ctx.lineWidth = 20 * scale;
-  ctx.stroke();
-}
-
-ctx.restore();
-        
-        // =========================
         // 🖼 IMAGE
-        // =========================
         if (image) {
           const userImg = new Image();
           userImg.crossOrigin = "anonymous";
@@ -181,51 +143,14 @@ ctx.restore();
             ctx.drawImage(userImg, dx, dy, drawW, drawH);
             ctx.restore();
 
-            // =========================
-            // 🟡 BORDER
-            // =========================
-            ctx.beginPath();
-
-            ctx.moveTo(x + r, y);
-            ctx.lineTo(x + w - r, y);
-            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-
-            ctx.lineTo(x + w, y + h - r);
-            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-
-            ctx.lineTo(x + r, y + h);
-            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-
-            ctx.lineTo(x, y + r);
-            ctx.quadraticCurveTo(x, y, x + r, y);
-
-            ctx.closePath();
-
-            ctx.lineWidth = 12 * scale;
+            // 🟡 Border
+            ctx.lineWidth = 10 * scale;
             ctx.strokeStyle = "#FFD700";
-            ctx.shadowColor = "rgba(255,215,0,0.6)";
-            ctx.shadowBlur = 20 * scale;
             ctx.stroke();
 
-            // =========================
             // ✨ TEXT
-            // =========================
-            ctx.shadowBlur = 0;
-
             const textY = size - 160 * scale;
-
-            const gradient = ctx.createLinearGradient(
-              size / 2 - 200 * scale,
-              textY,
-              size / 2 + 200 * scale,
-              textY
-            );
-
-            gradient.addColorStop(0, "#FFD700");
-            gradient.addColorStop(0.5, "#FFF5CC");
-            gradient.addColorStop(1, "#E6B800");
-
-            ctx.fillStyle = gradient;
+            ctx.fillStyle = "#FFD700";
             ctx.font = `bold ${55 * scale}px serif`;
             ctx.textAlign = "center";
             ctx.fillText("Eid Mubarak", size / 2, textY);
@@ -235,43 +160,39 @@ ctx.restore();
               ctx.fillText(name, size / 2, textY + 55 * scale);
             }
 
-            // =========================
             // 🔵 LOGO
-            // =========================
-           // 🔵 PREMIUM HALF-OVERLAP LOGO
-const logo = new Image();
-logo.onload = () => {
+            const logo = new Image();
+            logo.onload = () => {
+              const lw = 260 * scale;
+              const lh = 140 * scale;
 
-  const logoWidth = 260 * scale;
-  const logoHeight = 140 * scale;
+              const lx = size - lw - 20 * scale;
+              const ly = size - 300 * scale;
 
-  // 📍 Position (half inside frame)
-  const lx = size - logoWidth - 20 * scale;
-  const ly = size - 300 * scale; // adjust vertical overlap
+              ctx.drawImage(logo, lx, ly, lw, lh);
+              resolve();
+            };
 
-  ctx.save();
+            logo.src = progotiLogo;
+          };
 
-  // ✨ soft shadow (depth)
-  ctx.shadowColor = "rgba(0,0,0,0.3)";
-  ctx.shadowBlur = 15 * scale;
-  ctx.shadowOffsetY = 5 * scale;
+          userImg.src = image;
+        } else {
+          resolve();
+        }
+      });
+    },
+    [image, name]
+  );
 
-  // 🔥 draw logo
-  ctx.drawImage(logo, lx, ly, logoWidth, logoHeight);
-
-  ctx.restore();
-
-  resolve();
-};
-
-logo.src = progotiLogo;
-
+  // 👀 Preview
   useEffect(() => {
     if (previewCanvasRef.current) {
       drawCanvas(previewCanvasRef.current, 0.4);
     }
   }, [drawCanvas]);
 
+  // ⬇️ Download
   const handleDownload = async () => {
     if (!canvasRef.current) return;
 
@@ -284,7 +205,6 @@ logo.src = progotiLogo;
     link.click();
 
     setIsGenerating(false);
-
     confetti({ particleCount: 120, spread: 80 });
   };
 
